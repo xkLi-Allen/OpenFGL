@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "openfgl-lib"
+version = "1.0.0"
+readme = "README.md" 
+authors = [
+    { name = "Xunkai Li", email = "cs.xunkai.li@gmail.com" },
+    { name = "Yinlin Zhu", email = "zhuylin27@mail2.sysu.edu.cn" },
+    { name = "Boyang Pang", email = "1275854839@qq.com" },
+    { name = "Guochen Yan", email = "guochen_yan@outlook.com" },
+    { name = "Yeyu Yan", email = "yanyeyu-work@foxmail.com" },
+    { name = "Zening Li", email = "zening-li@outlook.com" },
+    { name = "Zhengyu Wu", email = "Jeremywzy96@outlook.com" },
+    { name = "Wentao Zhang", email = "wentao.zhang@pku.edu.cn" },
+    { name = "Rong-Hua Li", email = "lironghuabit@126.com" },
+    { name = "Guoren Wang", email = "wanggrbit@gmail.com" }
+]
+description = "Algorithm library for federated graph learning."
+license = {file = "LICENSE"}
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests==2.13.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/xkLi-Allen/OpenFGL/"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["openfgl*"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["openfgl"]
