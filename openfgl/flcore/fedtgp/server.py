@@ -4,6 +4,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Trainable_prototypes(nn.Module):
+    """
+    Trainable_prototypes implements a neural network model that learns global prototypes 
+    for each class in a federated learning setup. The model is used by the server in 
+    FedTGP to generate prototypes that adapt to data and model heterogeneity across clients.
+
+    Attributes:
+        device (torch.device): The device on which the model is running (e.g., CPU or GPU).
+        embeddings (nn.Embedding): Embedding layer that stores a trainable vector for each class.
+        middle (nn.Sequential): A sequence of layers that apply a linear transformation followed by a ReLU activation function.
+        fc (nn.Linear): The final fully connected layer that maps the transformed embeddings to the desired feature dimension.
+    """
     def __init__(self, num_classes, server_hidden_dim, feature_dim, device):
         super().__init__()
 
@@ -27,7 +38,38 @@ class Trainable_prototypes(nn.Module):
     
     
 class FedTGPServer(BaseServer):
+    """
+    FedTGPServer implements the server-side operations for the Federated Learning algorithm
+    described in the paper 'FedTGP: Trainable Global Prototypes with Adaptive-Margin-Enhanced 
+    Contrastive Learning for Data and Model Heterogeneity in Federated Learning'. This class 
+    handles the global aggregation of prototypes, the training of global prototypes, and 
+    communication with the clients.
+
+    Attributes:
+        fedtgp_lambda (float): Weight for the FedTGP loss component.
+        num_glb_epochs (int): Number of global epochs for training the prototypes.
+        lr_glb (float): Learning rate for the global prototype optimizer.
+        trainable_prototypes (nn.Module): A trainable model for generating global prototypes.
+        gp_optimizer (torch.optim.Optimizer): Optimizer for training the global prototypes.
+        global_prototype (dict): Dictionary to store the global prototypes for each class.
+    """
+    
+    
+    
     def __init__(self, args, global_data, data_dir, message_pool, device, fedtgp_lambda=1, num_glb_epochs=10, lr_glb=1e-2):
+        """
+        Initializes the FedTGPServer.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            global_data (object): The global dataset, if available.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between server and clients.
+            device (torch.device): Device to run the computations on.
+            fedtgp_lambda (float): Weight for the FedTGP loss component, default is 1.
+            num_glb_epochs (int): Number of global epochs for training the prototypes, default is 10.
+            lr_glb (float): Learning rate for the global prototype optimizer, default is 1e-2.
+        """
         super(FedTGPServer, self).__init__(args, global_data, data_dir, message_pool, device)
         
         self.fedtgp_lambda = fedtgp_lambda
@@ -39,6 +81,11 @@ class FedTGPServer(BaseServer):
         
         
     def execute(self):
+        """
+        Executes the global aggregation and prototype training process. The method first aggregates 
+        local prototypes from the clients, computes the global prototypes, and trains the global 
+        prototypes using an adaptive-margin-enhanced contrastive learning approach.
+        """
         y_list = []
         tensor_list = []
         for client_i in self.message_pool["sampled_clients"]:
@@ -98,6 +145,9 @@ class FedTGPServer(BaseServer):
             self.global_prototype[class_i] = self.trainable_prototypes.forward(class_i).detach()
         
     def send_message(self):
+        """
+        Sends a message to the clients containing the updated global prototypes.
+        """
         self.message_pool["server"] = {
             "global_prototype": self.global_prototype
         }

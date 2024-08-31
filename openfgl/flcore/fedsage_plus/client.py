@@ -12,6 +12,7 @@ from openfgl.utils.metrics import compute_supervised_metrics
 
 
 def accuracy_missing(output, labels):
+    """Computes the accuracy for the missing neighbor prediction."""
     preds = torch._cast_Int(output)
     correct=0.0
     for pred,label in zip(preds,labels):
@@ -21,6 +22,7 @@ def accuracy_missing(output, labels):
 
 
 def accuracy(pred,true):
+    """Computes the classification accuracy."""
     correct = (pred.max(1)[1] == true).sum()
     tot = true.shape[0]
     acc = float(correct / tot)
@@ -29,7 +31,33 @@ def accuracy(pred,true):
 
 
 class FedSagePlusClient(BaseClient):
+    """
+    FedSagePlusClient is a client implementation for the Federated Learning algorithm 
+    with Subgraph Federated Learning and Missing Neighbor Generation (FedSagePlus).
+    It extends the BaseClient class and handles local training, neighbor generation, 
+    and data communication in a federated setting.
+
+    Attributes:
+        splitted_impaired_data (dict): Contains the impaired subgraph data and masks for training, validation, and testing.
+        num_missing (torch.Tensor): Tensor indicating the number of missing neighbors for each node.
+        missing_feat (torch.Tensor): Tensor containing the features of missing neighbors.
+        original_neighbors (dict): Dictionary storing original neighbors for each node.
+        impaired_neighbors (dict): Dictionary storing neighbors in the impaired subgraph.
+    """
+    
+    
     def __init__(self, args, client_id, data, data_dir, message_pool, device):
+        """
+        Initializes the FedSagePlusClient.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): ID of the client.
+            data (object): Data specific to the client's task.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between client and server.
+            device (torch.device): Device to run the computations on.
+        """
         super(FedSagePlusClient, self).__init__(args, client_id, data, data_dir, message_pool, device)
         self.task.load_custom_model(LocSAGEPlus(input_dim=self.task.num_feats, 
                                                 hid_dim=self.args.hid_dim, 
@@ -40,7 +68,16 @@ class FedSagePlusClient(BaseClient):
         self.splitted_impaired_data, self.num_missing, self.missing_feat, self.original_neighbors, self.impaired_neighbors = self.get_impaired_subgraph()
         self.send_message() # initial message for first-round neighGen training 
         
+        
+        
     def get_custom_loss_fn(self):
+        """
+        Returns a custom loss function for the training process, which changes depending 
+        on the current phase of the training (neighbor generation or classification).
+
+        Returns:
+            function: A custom loss function for training.
+        """
         if self.phase == 0:
             def custom_loss_fn(embedding, logits, label, mask):    
                 pred_degree = self.task.model.output_pred_degree
@@ -101,6 +138,11 @@ class FedSagePlusClient(BaseClient):
 
 
     def execute(self):
+        """
+        Executes the training process. This method handles the switching between different 
+        phases of training, initializes the missing neighbor generation, and performs training 
+        based on the current phase.
+        """
         # switch phase
         if self.message_pool["round"] < config["gen_rounds"]:
             self.phase = 0
@@ -146,6 +188,11 @@ class FedSagePlusClient(BaseClient):
 
 
     def send_message(self):
+        """
+        Sends a message to the server containing the current model parameters and, 
+        if in the neighbor generation phase, additional information needed for 
+        cross-client missing neighbor prediction.
+        """
         self.message_pool[f"client_{self.client_id}"] = {
                 "num_samples": self.task.num_samples,
                 "weight": list(self.task.model.parameters()),
@@ -155,7 +202,18 @@ class FedSagePlusClient(BaseClient):
             self.message_pool[f"client_{self.client_id}"]["feat"] = self.task.data.x  # for 'loss_other'
             self.message_pool[f"client_{self.client_id}"]["original_neighbors"] = self.original_neighbors  # for 'loss_other'
 
+
     def get_impaired_subgraph(self):
+        """
+        Creates an impaired subgraph by randomly hiding a portion of the graph structure.
+
+        Returns:
+            splitted_impaired_data (dict): The impaired subgraph data and corresponding masks.
+            num_missing (torch.Tensor): Tensor containing the number of missing neighbors for each node.
+            missing_feat (torch.Tensor): Tensor containing the features of missing neighbors.
+            original_neighbors (dict): Dictionary of original neighbors for each node in the graph.
+            impaired_neighbors (dict): Dictionary of neighbors in the impaired subgraph.
+        """
         hide_len = int(config["hidden_portion"] * (self.task.val_mask).sum())
         could_hide_ids = self.task.val_mask.nonzero().squeeze().tolist()
         hide_ids = np.random.choice(could_hide_ids, hide_len, replace=False)
@@ -240,7 +298,15 @@ class FedSagePlusClient(BaseClient):
         return splitted_impaired_data, num_missing, missing_feat, original_neighbors, impaired_neighbors
     
     
+    
+    
     def get_filled_subgraph(self):
+        """
+        Fills the impaired subgraph with generated neighbors to create a filled subgraph.
+
+        Returns:
+            dict: The filled subgraph data and corresponding masks.
+        """
         with torch.no_grad():
             embedding, logits = self.task.model.forward(self.splitted_impaired_data["data"])
             pred_degree_float = self.task.model.output_pred_degree.detach()
@@ -291,7 +357,15 @@ class FedSagePlusClient(BaseClient):
 
             return splitted_filled_data
         
+        
+        
     def get_phase_0_override_evaluate(self):
+        """
+        Overrides the default evaluation method for the neighbor generation phase.
+
+        Returns:
+            function: The custom evaluation function for phase 0.
+        """
         def override_evaluate(splitted_data=None, mute=False):
             if splitted_data is None:
                 splitted_data = self.task.splitted_data
@@ -335,7 +409,15 @@ class FedSagePlusClient(BaseClient):
             return eval_output
         return override_evaluate
     
+    
+    
     def get_phase_1_override_evaluate(self):
+        """
+        Overrides the default evaluation method for the classification phase.
+
+        Returns:
+            function: The custom evaluation function for phase 1.
+        """
         def override_evaluate(splitted_data=None, mute=False):
             if splitted_data is None:
                 splitted_data = self.splitted_filled_data

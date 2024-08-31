@@ -9,7 +9,28 @@ import torch.nn.functional as F
 
 
 class AdaFGLClient(BaseClient):
+    """
+    AdaFGLClient implements the client-side logic for federated learning using the AdaFGL model, 
+    as described in the paper "AdaFGL: A New Paradigm for Federated Node Classification with Topology Heterogeneity".
+    It extends the BaseClient class by incorporating topology-aware learning methods, enabling the client 
+    to adapt to varying graph structures during the federated learning process.
+
+    Attributes:
+        phase (int): Indicates the current phase of training. Initially set to 0, it switches to 1 when entering the AdaFGL phase.
+    """
+    
     def __init__(self, args, client_id, data, data_dir, message_pool, device):
+        """
+        Initializes the AdaFGLClient.
+
+        Attributes:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): ID of the client.
+            data (object): Data specific to the client's task.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between client and server.
+            device (torch.device): Device to run the computations on.
+        """
         super(AdaFGLClient, self).__init__(args, client_id, data, data_dir, message_pool, device, personalized=True)
         
         self.phase = 0
@@ -17,6 +38,11 @@ class AdaFGLClient(BaseClient):
         
         
     def execute(self):
+        """
+        Executes the training process. This method handles the switching between different 
+        phases of training, initializes the AdaFGL model, and performs training based on 
+        the current phase.
+        """
         # switch phase
         if self.message_pool["round"] == config["num_rounds_vanilla"]:
             self.phase = 1
@@ -55,6 +81,10 @@ class AdaFGLClient(BaseClient):
         
 
     def send_message(self):
+        """
+        Sends a message to the server containing the model parameters and the number of samples 
+        in the current client's dataset. The content of the message depends on the current phase.
+        """
         if self.phase == 0:
             self.message_pool[f"client_{self.client_id}"] = {
                 "num_samples": self.task.num_samples,
@@ -64,6 +94,13 @@ class AdaFGLClient(BaseClient):
             self.message_pool[f"client_{self.client_id}"] = {}
         
     def adafgl_postprocess(self, loss_ce_fn=nn.CrossEntropyLoss()):
+        """
+        Performs post-processing for the AdaFGL model after training. This includes 
+        computing the loss, performing backpropagation, and updating the model parameters.
+
+        Args:
+            loss_ce_fn: Loss function for cross-entropy, default is nn.CrossEntropyLoss().
+        """
         self.adafgl_model.train()
         self.adafgl_optimizer.zero_grad()
 
@@ -88,6 +125,14 @@ class AdaFGLClient(BaseClient):
 
 
     def get_adafgl_override_evaluate(self):
+        """
+        Returns a custom evaluation function that overrides the default evaluation method 
+        for the AdaFGL model. This function computes metrics based on both homogeneous and 
+        heterogeneous forward passes.
+
+        Returns:
+            override_evaluate (function): A custom evaluation function.
+        """
         from openfgl.utils.metrics import compute_supervised_metrics
         def override_evaluate(splitted_data=None, mute=False):
             assert splitted_data is None, "AdaFGL doesn't support global data evaluation."

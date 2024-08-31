@@ -4,7 +4,28 @@ from openfgl.flcore.fedsage_plus.fedsage_plus_config import config
 from openfgl.flcore.fedsage_plus.locsage_plus import LocSAGEPlus
 
 class FedSagePlusServer(BaseServer):
+    """
+    FedSagePlusServer is the server-side implementation for the Federated Learning algorithm 
+    described in the paper 'Subgraph Federated Learning with Missing Neighbor Generation'.
+    It manages the global model, coordinates the phases of training across clients, and 
+    aggregates the clients' updates.
+
+    Attributes:
+        phase (int): Indicates the current phase of training. It can be 0 (neighbor generation) or 1 (classifier aggregation).
+    """
+    
+    
     def __init__(self, args, global_data, data_dir, message_pool, device):
+        """
+        Initializes the FedSagePlusServer.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            global_data (object): Global data used for the federated learning process.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between clients and server.
+            device (torch.device): Device to run the computations on.
+        """
         super(FedSagePlusServer, self).__init__(args, global_data, data_dir, message_pool, device)
         self.task.load_custom_model(LocSAGEPlus(input_dim=self.task.num_feats, 
                                                         hid_dim=self.args.hid_dim, 
@@ -14,6 +35,11 @@ class FedSagePlusServer(BaseServer):
                                                         dropout=self.args.dropout))
 
     def execute(self):
+        """
+        Executes the server-side operations for each round. Depending on the phase, it either 
+        does nothing (in phase 0) or aggregates the classifier parameters from all clients 
+        (in phase 1).
+        """
         # switch phase
         if self.message_pool["round"] == 0:
             self.phase = 0
@@ -37,9 +63,10 @@ class FedSagePlusServer(BaseServer):
                                 global_param.data += weight * local_param
                 
             
-            
-        
     def send_message(self):
+        """
+        Sends the updated global model parameters to the clients after each round of execution.
+        """
         self.message_pool["server"] = {
             "weight": list(self.task.model.parameters())
         }

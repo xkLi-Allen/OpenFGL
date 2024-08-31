@@ -6,7 +6,28 @@ from openfgl.flcore.feddep.localdep import Classifier_F
 
 
 class FedDEPEServer(BaseServer):
+    """
+    FedDEPEServer is a server implementation for the Federated Learning algorithm with Deep 
+    Efficient Private Neighbor Generation for Subgraph Federated Learning (FedDEP). This 
+    server manages the aggregation of model parameters from multiple clients and oversees 
+    the global model updates in a federated learning environment.
+
+    Attributes:
+        None (inherits attributes from BaseServer)
+    """
+    
+    
     def __init__(self, args, global_data, data_dir, message_pool, device):
+        """
+        Initializes the FedDEPEServer.
+
+        Attributes:
+            args (Namespace): Arguments containing model and training configurations.
+            global_data (object): Global dataset accessible by the server.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between server and clients.
+            device (torch.device): Device to run the computations on.
+        """
         super(FedDEPEServer, self).__init__(args, global_data, data_dir, message_pool, device)
         self.task.load_custom_model(Classifier_F(
             input_dim=(self.task.num_feats, self.args.hid_dim),
@@ -16,6 +37,11 @@ class FedDEPEServer(BaseServer):
         self.task.override_evaluate = self.get_override_evaluate()
 
     def execute(self):
+        """
+        Executes the server-side operations. If it's not the initial round, this method 
+        aggregates the model parameters received from sampled clients by computing their 
+        weighted average to update the global model.
+        """
         if self.message_pool["round"] == 0:
             pass
         else:
@@ -31,12 +57,37 @@ class FedDEPEServer(BaseServer):
                             global_param.data += weight * local_param
 
     def send_message(self):
+        """
+        Sends a message to the clients containing the updated global model parameters 
+        after aggregation.
+        """
         self.message_pool["server"] = {"weight": list(self.task.model.parameters())}
 
+
+
     def get_override_evaluate(self):
+        """
+        Overrides the default evaluation method. This method evaluates the global model 
+        on the training, validation, and test datasets using the specified evaluation 
+        metrics.
+
+        Returns:
+            function: A custom evaluation function.
+        """
         from openfgl.utils.metrics import compute_supervised_metrics
 
         def override_evaluate(splitted_data=None, mute=False):
+            """
+            Evaluates the model on the provided dataset splits (or the default splits) and 
+            computes relevant metrics. Outputs evaluation information unless muted.
+
+            Args:
+                splitted_data (dict, optional): The dataset splits to evaluate on. Defaults to None.
+                mute (bool, optional): If True, suppresses the print output. Defaults to False.
+
+            Returns:
+                dict: Evaluation output containing losses and metrics for training, validation, and test datasets.
+            """
             if splitted_data is None:
                 splitted_data = self.task.splitted_data
             else:

@@ -11,7 +11,31 @@ import torch.nn.functional as F
 
 
 class FGGPClient(BaseClient):
+    """
+    FGGPClient is a client-side implementation for the Federated Graph Learning with Generalizable Prototypes 
+    (FGGP) framework. This client handles local training, model updates, and prototype generation in a 
+    federated learning setting, focusing on overcoming domain shifts across clients.
+
+    Attributes:
+        global_model (nn.Module): A copy of the global model used to compute global embeddings.
+        personal_project (nn.Module): A projection layer used for personalizing embeddings.
+        data2 (torch_geometric.data.Data): A copy of the data with modified edges for use in the FGGP algorithm.
+    """
+    
+    
+    
     def __init__(self, args, client_id, data, data_dir, message_pool, device):
+        """
+        Initializes the FGGPClient.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): The ID of the client.
+            data (torch_geometric.data.Data): The graph data specific to the client's task.
+            data_dir (str): Directory containing the data.
+            message_pool (dict): Pool for managing messages between client and server.
+            device (torch.device): The device on which computations will be performed (e.g., CPU or GPU).
+        """
         super(FGGPClient, self).__init__(args, client_id, data, data_dir, message_pool, device)
         self.task.load_custom_model(FedGCN(nfeat=self.task.num_feats, nhid=self.args.hid_dim,
                                            nclass=self.task.num_global_classes, nlayer=self.args.num_layers,
@@ -20,7 +44,16 @@ class FGGPClient(BaseClient):
         self.task.splitted_data["data"].adj = to_torch_csc_tensor(self.task.data.edge_index)
         self.personal_project = MLP(self.args.hid_dim,self.args.hid_dim,0.5)
 
+
+
+
     def get_custom_loss_fn(self):
+        """
+        Returns the custom loss function used during local training. The loss function includes:
+        - Cross-entropy loss for classification.
+        - Graph augmentation loss for learning on augmented graph structures.
+        - Prototype alignment loss to align local and global prototypes.
+        """
         def custom_loss_fn(embedding, logits, label, mask):
             loss_ce = torch.nn.functional.cross_entropy(logits[mask], label[mask])
 
@@ -46,7 +79,16 @@ class FGGPClient(BaseClient):
             return loss
         return custom_loss_fn
 
+
+
+
     def execute(self):
+        """
+        Executes the local training process. This involves:
+        - Synchronizing the local and global model parameters with the server.
+        - Calculating the k-nearest neighbors graph for global embeddings.
+        - Training the model using the custom loss function.
+        """
         with torch.no_grad():
             for (local_param, g_p,global_param) in zip(self.task.model.parameters(), self.global_model.parameters(),self.message_pool["server"]["weight"]):
                 local_param.data.copy_(global_param)
@@ -65,10 +107,8 @@ class FGGPClient(BaseClient):
         del coo
         del adj
         combined_edge_index = torch.cat([self.task.data.edge_index, self.task.data.global_edge_index], dim=1)
-        # 将 edge_index 转换为元组集合，删除重复的边
         # combined_edge_index = torch.cat([train_loader.edge_index, train_loader.edge_index], dim=1)
         edge_set = set(zip(combined_edge_index[0].cpu().tolist(), combined_edge_index[1].cpu().tolist()))
-        # 将结果转换回 edge_index 的格式
         union_edge_index = torch.tensor([[i[0] for i in edge_set], [i[1] for i in edge_set]], dtype=torch.long)
 
         self.data2 = self.task.splitted_data["data"].clone()
@@ -85,6 +125,9 @@ class FGGPClient(BaseClient):
         self.task.train()
 
     def send_message(self):
+        """
+        Sends the client's local model parameters and the computed prototypes to the server.
+        """
         self.task.model.eval()
         emb,logits = self.task.model(self.task.splitted_data["data"])
         #feat = self.personal_project(emb)

@@ -9,6 +9,17 @@ from openfgl.flcore.fedpub.maskedgcn import MaskedGCN
 
 
 def from_networkx(G, group_node_attrs=None, group_edge_attrs=None):
+    """
+    Converts a NetworkX graph to a PyTorch Geometric Data object.
+
+    Args:
+        G (networkx.Graph): The NetworkX graph to convert.
+        group_node_attrs (list or None): Node attributes to group into the node feature matrix `x`.
+        group_edge_attrs (list or None): Edge attributes to group into the edge feature matrix `edge_attr`.
+
+    Returns:
+        data (torch_geometric.data.Data): The converted PyTorch Geometric Data object.
+    """
     import networkx as nx
     from torch_geometric.data import Data
 
@@ -92,7 +103,29 @@ def from_networkx(G, group_node_attrs=None, group_edge_attrs=None):
     return data
 
 class FedPubServer(BaseServer):
+    """
+    FedPubServer is a server implementation for the Personalized Subgraph Federated Learning (FedPub) framework,
+    as described in the paper "Personalized Subgraph Federated Learning." This server aggregates the model updates
+    from clients, calculates similarity between clients based on their functional embeddings, and sends personalized
+    model updates back to the clients.
+
+    Attributes:
+        proxy (torch_geometric.data.Data): Proxy data used for functional embedding calculation.
+        update_weights (list): A list of model weights personalized for each client.
+    """
+    
+    
     def __init__(self, args, global_data, data_dir, message_pool, device):
+        """
+        Initializes the FedPubServer.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            global_data (object): Global dataset accessible by the server.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between server and clients.
+            device (torch.device): Device to run the computations on.
+        """
         super(FedPubServer, self).__init__(args, global_data, data_dir, message_pool, device, personalized=True)
         self.proxy = self.get_proxy_data(self.task.num_feats)
         self.task.load_custom_model(MaskedGCN(input_dim=self.task.num_feats, hid_dim=self.args.hid_dim, output_dim=self.task.num_global_classes, l1=config["l1"], laye_mask_one=config["laye_mask_one"], clsf_mask_one=config["clsf_mask_one"]))
@@ -100,6 +133,11 @@ class FedPubServer(BaseServer):
         
         
     def execute(self):
+        """
+        Executes the server-side operations for aggregating model updates from clients and computing
+        personalized model weights for each client based on similarity measures between their functional
+        embeddings. The server then prepares these personalized model weights to be sent back to the clients.
+        """
         local_embeddings = []
         local_weights = []
         local_samples = []
@@ -134,6 +172,10 @@ class FedPubServer(BaseServer):
         
         
     def send_message(self):
+        """
+        Sends a message to the clients. In the first round, the server sends the global model weights
+        and the proxy data. In subsequent rounds, it sends personalized model weights to each client.
+        """
         if self.message_pool["round"] == 0:
             self.message_pool["server"] = {
                 "weight": self.task.model.state_dict(),
@@ -152,6 +194,16 @@ class FedPubServer(BaseServer):
 
 
     def aggregate(self, local_weights, ratio=None):
+        """
+        Aggregates the model weights from clients based on the given ratio.
+
+        Args:
+            local_weights (list): A list of state dictionaries containing model weights from clients.
+            ratio (list, optional): A list of ratios for weighted averaging. If None, equal weighting is used.
+
+        Returns:
+            OrderedDict: Aggregated model weights.
+        """
         aggr_theta = OrderedDict([(k, None) for k in local_weights[0].keys()])
         if ratio is not None:
             for name, params in aggr_theta.items():
@@ -164,7 +216,17 @@ class FedPubServer(BaseServer):
                     torch.stack([theta[name] * ratio for j, theta in enumerate(local_weights)]), dim=0)
         return aggr_theta
 
+
     def get_proxy_data(self, n_feat):
+        """
+        Generates proxy data for calculating functional embeddings.
+
+        Args:
+            n_feat (int): The number of features for each node in the proxy graph.
+
+        Returns:
+            torch_geometric.data.Data: Proxy graph data with random features.
+        """
         import networkx as nx
 
         num_graphs, num_nodes = config["n_proxy"], 100

@@ -11,7 +11,30 @@ import torch.nn as nn
 
 
 class FedTADServer(BaseServer):
+    """
+    FedTADServer implements the server-side operations for the Federated Learning algorithm
+    described in the paper 'FedTAD: Topology-aware Data-free Knowledge Distillation for Subgraph 
+    Federated Learning'. This class handles global model aggregation, the training of a generator 
+    for knowledge distillation, and the coordination of knowledge sharing between clients.
+
+    Attributes:
+        generator (FedTAD_ConGenerator): A generator model used for creating pseudo graphs to 
+                                         facilitate knowledge distillation.
+        generator_optimizer (torch.optim.Optimizer): Optimizer for the generator model.
+    """
+    
+    
     def __init__(self, args, global_data, data_dir, message_pool, device):
+        """
+        Initializes the FedTADServer.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            global_data (object): Global dataset accessible to the server.
+            data_dir (str): Directory containing the data.
+            message_pool (object): Pool for managing messages between client and server.
+            device (torch.device): Device to run the computations on.
+        """
         super(FedTADServer, self).__init__(args, global_data, data_dir, message_pool, device)
 
         self.task.optim = Adam(self.task.model.parameters(), lr=config["lr_d"], weight_decay=self.args.weight_decay)
@@ -19,7 +42,15 @@ class FedTADServer(BaseServer):
         self.generator_optimizer = Adam(self.generator.parameters(), lr=config["lr_g"], weight_decay=self.args.weight_decay)
         
         
+        
     def execute(self):
+        """
+        Executes the main operations of the server during a federated learning round.
+
+        This includes aggregating the model parameters from the clients, training a generator 
+        to create pseudo graphs for knowledge distillation, and updating the global model based 
+        on the generated data and the knowledge shared by the clients.
+        """
         # global aggregation
         with torch.no_grad():
             num_tot_samples = sum([self.message_pool[f"client_{client_id}"]["num_samples"] for client_id in self.message_pool[f"sampled_clients"]])
@@ -160,6 +191,12 @@ class FedTADServer(BaseServer):
         
         
     def send_message(self):
+        """
+        Sends the updated global model weights to the clients.
+        
+        The message sent to the clients includes the updated model parameters after aggregation 
+        and knowledge distillation.
+        """
         self.message_pool["server"] = {
             "weight": list(self.task.model.parameters())
         }

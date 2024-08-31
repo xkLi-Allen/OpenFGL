@@ -11,7 +11,37 @@ import openfgl.flcore.fgssl.losses as L
 
 
 class FGSSLClient(BaseClient):
+    """
+    FGSSLClient implements the client-side functionality for the Federated Graph Semantic and Structural Learning (FGSSL)
+    framework. This client performs graph neural network (GNN) training while considering both semantic and structural
+    aspects of the graph. The client leverages global model knowledge and augments the data with various contrastive
+    learning techniques.
+
+    Attributes:
+        global_model (nn.Module): A copy of the global model received from the server.
+        cos (nn.Module): Cosine similarity function used for contrastive learning.
+        contrast_model (nn.Module): Model for performing single-branch contrastive learning.
+        withcontrast_model (nn.Module): Model for performing within-embedding contrastive learning.
+        augWeak (A.Compose): Weak data augmentation pipeline.
+        augStrongF (A.Compose): Strong data augmentation pipeline.
+        augNone (A.Identity): Identity augmentation (no augmentation).
+        ccKD (nn.Module): Correlation-based knowledge distillation module.
+    """
+    
+    
+    
     def __init__(self, args, client_id, data, data_dir, message_pool, device):
+        """
+        Initializes the FGSSLClient with the provided arguments, client ID, data, and device.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): Unique identifier for the client.
+            data (object): Graph data specific to the client's task.
+            data_dir (str): Directory containing the data.
+            message_pool (dict): Pool for managing messages between the client and server.
+            device (torch.device): Device on which computations will be performed (e.g., CPU or GPU).
+        """
         super(FGSSLClient, self).__init__(args, client_id, data, data_dir, message_pool, device)
         self.global_model = copy.deepcopy(self.task.model).to(self.device)
         self.cos = torch.nn.CosineSimilarity(dim=-1)
@@ -22,8 +52,16 @@ class FGSSLClient(BaseClient):
         self.augNone = A.Identity()
         self.ccKD = Correlation()
             
+            
+            
     def get_custom_loss_fn(self):
+        """
+        Returns the custom loss function for training the model. The loss function includes cross-entropy loss 
+        for classification, as well as contrastive and distillation losses when the model is in training mode.
 
+        Returns:
+            function: A custom loss function that computes the loss based on model outputs and target labels.
+        """
 
         def custom_loss_fn(embedding, logits, label, mask):
             loss1 = torch.nn.functional.cross_entropy(logits[mask], label[mask])
@@ -80,7 +118,13 @@ class FGSSLClient(BaseClient):
             return loss
         return custom_loss_fn
 
+
+
     def execute(self):
+        """
+        Executes the local training process. The global model weights are first updated with the received 
+        global parameters. The model is then trained using the custom loss function defined in `get_custom_loss_fn`.
+        """
         with torch.no_grad():
             for (local_param, global_param) in zip(self.task.model.parameters(), self.message_pool["server"]["weight"]):
                 local_param.data.copy_(global_param)
@@ -89,8 +133,13 @@ class FGSSLClient(BaseClient):
 
         self.task.loss_fn = self.get_custom_loss_fn()
         self.task.train()
+        
+        
 
     def send_message(self):
+        """
+        Sends the locally trained model parameters to the server.
+        """
         self.message_pool[f"client_{self.client_id}"] = {
                 "num_samples": self.task.num_samples,
                 "weight": list(self.task.model.parameters())
