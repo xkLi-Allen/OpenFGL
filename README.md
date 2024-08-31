@@ -49,7 +49,7 @@ args.simulation_mode = "subgraph_fl_louvain"
 args.num_clients = 10
 
 
-if False:
+if True:
     args.fl_algorithm = "fedavg"
     args.model = ["gcn"]
 else:
