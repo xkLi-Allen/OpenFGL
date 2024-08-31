@@ -41,15 +41,24 @@ from openfgl.flcore.trainer import FGLTrainer
 
 args = config.args
 
-args.root = "your_root_path"
+args.root = "your_data_root"
+
 
 args.dataset = ["Cora"]
+args.simulation_mode = "subgraph_fl_louvain"
+args.num_clients = 10
 
-args.model = ["gcn"]
+
+if False:
+    args.fl_algorithm = "fedavg"
+    args.model = ["gcn"]
+else:
+    args.fl_algorithm = "fedproto"
+    args.model = ["gcn", "gat", "sgc", "mlp", "graphsage"] # choose multiple gnn models for model heterogeneity setting.
 
 args.metrics = ["accuracy"]
 
-args.fl_algorithms = "fedavg"
+
 
 trainer = FGLTrainer(args)
 
