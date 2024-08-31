@@ -5,11 +5,26 @@ import sys
 from collections.abc import Iterable
 
 
-def check_args(args):
-    pass
-
 
 def seed_everything(seed):
+    """
+    Sets the seed for multiple random number generators to ensure reproducibility across runs. 
+    It also configures the behavior of the CUDA backend for deterministic output.
+
+    Args:
+        seed (int): The seed number to use for seeding the random number generators.
+
+    Details:
+        - Sets the seed for Python's built-in `random` module, NumPy's random module, and PyTorch.
+        - Configures PyTorch's CUDA-related seeds for all GPUs.
+        - Sets CUDA's cuDNN backend to operate deterministically, which can impact performance
+          due to the disabling of certain optimizations like `benchmark` and general `enabled` status.
+
+    Note:
+        Enabling determinism can lead to a performance trade-off but is necessary for reproducibility
+        when exact outcomes are critical to maintain across different runs, especially during debugging
+        or testing phases.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -23,6 +38,20 @@ def seed_everything(seed):
     
     
 def load_client(args, client_id, data, data_dir, message_pool, device):
+    """
+    Loads and returns an instance of a client based on the federated learning algorithm specified in the arguments.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        client_id (int): ID of the client.
+        data (object): Data specific to the client's task.
+        data_dir (str): Directory containing the data.
+        message_pool (object): Pool for managing messages between client and server.
+        device (torch.device): Device to run the computations on.
+
+    Returns:
+        An instance of a client class based on the federated learning algorithm specified.
+    """
     if args.fl_algorithm == "isolate":
         from openfgl.flcore.isolate.client import IsolateClient
         return IsolateClient(args, client_id, data, data_dir, message_pool, device)
@@ -82,6 +111,19 @@ def load_client(args, client_id, data, data_dir, message_pool, device):
         return FedGLClient(args, client_id, data, data_dir, message_pool, device)
     
 def load_server(args, global_data, data_dir, message_pool, device):
+    """
+    Loads and returns an instance of a server based on the federated learning algorithm specified in the arguments.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_data (object): Global data.
+        data_dir (str): Directory containing the data.
+        message_pool (object): Pool for managing messages between client and server.
+        device (torch.device): Device to run the computations on.
+
+    Returns:
+        An instance of a server class based on the federated learning algorithm specified.
+    """
     if args.fl_algorithm == "isolate":
         from openfgl.flcore.isolate.server import IsolateServer
         return IsolateServer(args, global_data, data_dir, message_pool, device)
@@ -141,12 +183,34 @@ def load_server(args, global_data, data_dir, message_pool, device):
         return FedGLServer(args, global_data, data_dir, message_pool, device)
     
 def load_optim(args):
+    """
+    Loads and returns an optimizer class based on the specification in the arguments.
+
+    Args:
+        args (Namespace): Configuration arguments which include the optimizer type.
+
+    Returns:
+        An optimizer class from the `torch.optim` module.
+    """
     if args.optim == "adam":
         from torch.optim import Adam
         return Adam
     
     
 def load_task(args, client_id, data, data_dir, device):
+    """
+    Loads and returns a task instance based on the task type specified in the arguments.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        client_id (int): ID of the client.
+        data (object): Data specific to the client's task.
+        data_dir (str): Directory containing the data.
+        device (torch.device): Device to run the computations on.
+
+    Returns:
+        An instance of a task class based on the task specified.
+    """
     if args.task == "node_cls":
         from openfgl.task.node_cls import NodeClsTask
         return NodeClsTask(args, client_id, data, data_dir, device)
@@ -163,6 +227,18 @@ def load_task(args, client_id, data, data_dir, device):
 
 
 def extract_floats(s):
+    """
+    Extracts and converts three floats separated by hyphens from a string and ensures their sum is 1.
+
+    Args:
+        s (str): A string containing three float numbers separated by hyphens (e.g., "0.6-0.3-0.1").
+
+    Returns:
+        tuple: A tuple of three floats (train, val, test) extracted from the string.
+
+    Raises:
+        AssertionError: If the sum of the three numbers does not equal 1.
+    """
     from decimal import Decimal
     parts = s.split('-')
     train = float(parts[0])
@@ -172,6 +248,16 @@ def extract_floats(s):
     return train, val, test
 
 def idx_to_mask_tensor(idx_list, length):
+    """
+    Converts a list of indices to a tensor mask of a specified length.
+
+    Args:
+        idx_list (list[int]): List of indices that should be marked as 1 in the mask.
+        length (int): Total length of the mask tensor.
+
+    Returns:
+        torch.Tensor: A binary mask tensor where positions corresponding to indices in idx_list are set to 1.
+    """
     mask = torch.zeros(length)
     mask[idx_list] = 1
     return mask
@@ -179,6 +265,15 @@ def idx_to_mask_tensor(idx_list, length):
 
 
 def mask_tensor_to_idx(tensor):
+    """
+    Converts a tensor mask to a list of indices where the tensor is non-zero.
+
+    Args:
+        tensor (torch.Tensor): A tensor containing binary values.
+
+    Returns:
+        list[int]: A list of indices corresponding to non-zero entries in the tensor.
+    """
     result = tensor.nonzero().squeeze().tolist()
     if type(result) is not list:
         result = [result]
@@ -189,6 +284,15 @@ import sys
 import torch
 
 def total_size(o):
+    """Calculate the total memory size of a given object, avoiding infinite recursion.
+
+    Args:
+        o: The object to calculate the size of.
+        seen: A set of already seen objects to avoid infinite recursion.
+
+    Returns:
+        int: The total memory size of the object in bytes.
+    """
     size = 0
     if isinstance(o, torch.Tensor):
         size += o.element_size() * o.numel()
@@ -201,6 +305,15 @@ def total_size(o):
 
 
 def model_complexity(model:torch.nn.Module):
+    """
+    Calculates the complexity of a PyTorch model by counting the number of parameters and computing FLOPs.
+
+    Args:
+        model (torch.nn.Module): The model for which complexity is calculated.
+
+    Returns:
+        dict: A dictionary with the total number of parameters and FLOPs.
+    """
     from fvcore.nn import FlopCountAnalysis, parameter_count
     params = sum([val for val in parameter_count(model).values()])
     return params

@@ -8,7 +8,20 @@ from collections.abc import Iterable
 from openfgl.utils.basic_utils import total_size
 
 class Logger:
-    
+    """Logger class for tracking and saving evaluation results and communication costs.
+
+    Args:
+        args (Namespace): Arguments specifying logging and evaluation parameters.
+        message_pool (dict): A pool of messages exchanged during the evaluation.
+        task_path (str): Path to the task directory.
+        personalized (bool): Whether to log personalized communication costs.
+
+    Attributes:
+        log_path (str): Path to the log file.
+        start_time (float): Start time of the evaluation.
+        comm_cost (list): List of communication costs per round.
+        metrics_list (list): List of evaluation metrics.
+    """
     def __init__(self, args, message_pool, task_path, personalized=False):
         self.args = args
         self.message_pool = message_pool
@@ -35,6 +48,10 @@ class Logger:
         self.comm_cost = []
     
     def add_log(self, evaluation_result):
+        """Add an evaluation result to the log.
+        Args:
+            evaluation_result (dict): The evaluation result to be logged.
+        """
         if not self.debug:
             return
         self.metrics_list.append(copy.deepcopy(evaluation_result))
@@ -53,6 +70,7 @@ class Logger:
             self.comm_cost.append(comm_cost)
     
     def save(self):
+        """Save the log to a file."""
         if not self.debug:
             return
         

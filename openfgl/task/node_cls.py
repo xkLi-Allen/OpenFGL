@@ -13,12 +13,45 @@ from openfgl.utils.privacy_utils import clip_gradients, add_noise
 from openfgl.data.processing import processing    
 
 class NodeClsTask(BaseTask):
+    """
+    Task class for node classification in a federated learning setup.
+
+    Attributes:
+        client_id (int): ID of the client.
+        data_dir (str): Directory containing the data.
+        args (Namespace): Arguments containing model and training configurations.
+        device (torch.device): Device to run the computations on.
+        data (object): Data specific to the task.
+        model (torch.nn.Module): Model to be trained.
+        optim (torch.optim.Optimizer): Optimizer for the model.
+        train_mask (torch.Tensor): Mask for the training set.
+        val_mask (torch.Tensor): Mask for the validation set.
+        test_mask (torch.Tensor): Mask for the test set.
+        splitted_data (dict): Dictionary containing split data and DataLoaders.
+        processed_data (object): Processed data for training.
+    """
     def __init__(self, args, client_id, data, data_dir, device):
+        """
+        Initialize the NodeClsTask with provided arguments, data, and device.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): ID of the client.
+            data (object): Data specific to the task.
+            data_dir (str): Directory containing the data.
+            device (torch.device): Device to run the computations on.
+        """
         super(NodeClsTask, self).__init__(args, client_id, data, data_dir, device)
         
 
         
     def train(self, splitted_data=None):
+        """
+        Train the model on the provided or processed data.
+
+        Args:
+            splitted_data (dict, optional): Dictionary containing split data and DataLoaders. Defaults to None.
+        """
         if splitted_data is None:
             splitted_data = self.processed_data # use processed_data to train model
         else:
@@ -47,6 +80,16 @@ class NodeClsTask(BaseTask):
 
     
     def evaluate(self, splitted_data=None, mute=False):
+        """
+        Evaluate the model on the provided or processed data.
+
+        Args:
+            splitted_data (dict, optional): Dictionary containing split data and DataLoaders. Defaults to None.
+            mute (bool, optional): If True, suppress the print statements. Defaults to False.
+
+        Returns:
+            dict: Dictionary containing evaluation metrics and results.
+        """
         if self.override_evaluate is None:
             if splitted_data is None:
                 splitted_data = self.splitted_data # use splitted_data to evaluate model
@@ -93,32 +136,80 @@ class NodeClsTask(BaseTask):
             return self.override_evaluate(splitted_data, mute)
     
     def loss_fn(self, embedding, logits, label, mask):
+        """
+        Calculate the loss for the model.
+
+        Args:
+            embedding (torch.Tensor): Embeddings from the model.
+            logits (torch.Tensor): Logits from the model.
+            label (torch.Tensor): Ground truth labels.
+            mask (torch.Tensor): Mask to filter the logits and labels.
+
+        Returns:
+            torch.Tensor: Calculated loss.
+        """
         return self.default_loss_fn(logits[mask], label[mask])
         
     @property
     def default_model(self):
+        """
+        Get the default model for node and edge level tasks.
+
+        Returns:
+            torch.nn.Module: Default model.
+        """
         return load_node_edge_level_default_model(self.args, input_dim=self.num_feats, output_dim=self.num_global_classes, client_id=self.client_id)
     
     @property
     def default_optim(self):
+        """
+        Get the default optimizer for the task.
+
+        Returns:
+            torch.optim.Optimizer: Default optimizer.
+        """
         if self.args.optim == "adam":
             from torch.optim import Adam
             return Adam
     
     @property
     def num_samples(self):
+        """
+        Get the number of samples in the dataset.
+
+        Returns:
+            int: Number of samples.
+        """
         return self.data.x.shape[0]
     
     @property
     def num_feats(self):
+        """
+        Get the number of features in the dataset.
+
+        Returns:
+            int: Number of features.
+        """
         return self.data.x.shape[1]
     
     @property
     def num_global_classes(self):
+        """
+        Get the number of global classes in the dataset.
+
+        Returns:
+            int: Number of global classes.
+        """
         return self.data.num_global_classes
         
     @property
     def default_loss_fn(self):
+        """
+        Get the default loss function for the task.
+
+        Returns:
+            function: Default loss function.
+        """
         if self.args.dp_mech != "no_dp":
             return nn.CrossEntropyLoss(reduction="none")
         else:
@@ -126,6 +217,12 @@ class NodeClsTask(BaseTask):
     
     @property
     def default_train_val_test_split(self):
+        """
+        Get the default train/validation/test split based on the dataset.
+
+        Returns:
+            tuple: Default train/validation/test split ratios.
+        """
         if self.client_id is None:
             return None
         
@@ -148,10 +245,19 @@ class NodeClsTask(BaseTask):
         
     @property
     def train_val_test_path(self):
+        """
+        Get the path to the train/validation/test split file.
+
+        Returns:
+            str: Path to the split file.
+        """
         return osp.join(self.data_dir, f"node_cls")
     
 
     def load_train_val_test_split(self):
+        """
+        Load the train/validation/test split from a file.
+        """
         if self.client_id is None and len(self.args.dataset) == 1: # server
             glb_train = []
             glb_val = []
@@ -235,6 +341,17 @@ class NodeClsTask(BaseTask):
         self.processed_data = processing(args=self.args, splitted_data=self.splitted_data, processed_dir=self.data_dir, client_id=self.client_id)
             
     def local_subgraph_train_val_test_split(self, local_subgraph, split, shuffle=True):
+        """
+        Split the local subgraph into train, validation, and test sets.
+
+        Args:
+            local_subgraph (object): Local subgraph to be split.
+            split (str or tuple): Split ratios or default split identifier.
+            shuffle (bool, optional): If True, shuffle the subgraph before splitting. Defaults to True.
+
+        Returns:
+            tuple: Masks for the train, validation, and test sets.
+        """
         num_nodes = local_subgraph.x.shape[0]
         
         if split == "default_split":

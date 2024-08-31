@@ -4,11 +4,20 @@ from torch_geometric.nn.pool import *
 
 
 def load_graph_cls_default_model(args, input_dim, output_dim, client_id=None):
+    """
+    Load the default model for graph classification tasks.
+
+    Args:
+        args (Namespace): Arguments containing model configurations.
+        input_dim (int): Dimension of the input features.
+        output_dim (int): Dimension of the output features.
+        client_id (int, optional): ID of the client in federated learning. Defaults to None.
+
+    Returns:
+        torch.nn.Module: The initialized model.
+    """
     if client_id is None: # server
-        if len(args.model) > 1:
-            return None
-        else:
-            model_name = args.model[0]
+        model_name = args.model[0]
     else: # client
         if len(args.model) > 1:
             model_id = int(len(args.model) * client_id / args.num_clients)
@@ -33,11 +42,20 @@ def load_graph_cls_default_model(args, input_dim, output_dim, client_id=None):
 
 
 def load_node_edge_level_default_model(args, input_dim, output_dim, client_id=None):
+    """
+    Load the default model for node and edge level tasks.
+
+    Args:
+        args (Namespace): Arguments containing model configurations.
+        input_dim (int): Dimension of the input features.
+        output_dim (int): Dimension of the output features.
+        client_id (int, optional): ID of the client in federated learning. Defaults to None.
+
+    Returns:
+        torch.nn.Module: The initialized model.
+    """
     if client_id is None: # server
-        if len(args.model) > 1:
-            return None
-        else:
-            model_name = args.model[0]
+        model_name = args.model[0]
     else: # client
         if len(args.model) > 1:
             model_id = int(len(args.model) * client_id / args.num_clients)

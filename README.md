@@ -6,9 +6,9 @@
 OpenFGL is a comprehensive, user-friendly algorithm library, complemented by an integrated evaluation platform, designed specifically for researchers in the field of federated graph learning (FGL).
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2408.16288">Paper</a> •
   <a href="#Library Highlights">Highlights</a> •
   <a href="https://pypi.org/project/openfgl-lib/1.0.0/">Installation</a> •
-  <a href="https://github.com/zyl24/OpenFGL/tree/master/openfgl/examples">Examples</a> •
   <a href="https://openfgl.readthedocs.io/en/latest/">Docs</a> •
   <a href="#Citation">Citation</a> 
 </p>
@@ -33,12 +33,40 @@ OpenFGL is a comprehensive, user-friendly algorithm library, complemented by an 
 
 ## Get Started
 
-```
-python main.py --dataset Cora --model gcn --metrics accuracy
+```python
+import openfgl.config as config
+
+
+from openfgl.flcore.trainer import FGLTrainer
+
+args = config.args
+
+args.root = "your_root_path"
+
+args.dataset = ["Cora"]
+
+args.model = ["gcn"]
+
+args.metrics = ["accuracy"]
+
+args.fl_algorithms = "fedavg"
+
+trainer = FGLTrainer(args)
+
+trainer.train()
 ```
 
 
 ## Citation
 Please cite our paper (and the respective papers of the methods used) if you use this code in your own work:
 ```
+@misc{li2024openfglcomprehensivebenchmarksfederated,
+      title={OpenFGL: A Comprehensive Benchmarks for Federated Graph Learning}, 
+      author={Xunkai Li and Yinlin Zhu and Boyang Pang and Guochen Yan and Yeyu Yan and Zening Li and Zhengyu Wu and Wentao Zhang and Rong-Hua Li and Guoren Wang},
+      year={2024},
+      eprint={2408.16288},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2408.16288}, 
+}
 ```

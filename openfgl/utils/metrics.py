@@ -8,6 +8,21 @@ from munkres import Munkres
 
 
 def compute_supervised_metrics(metrics, logits, labels, suffix):
+    """
+    Compute various supervised learning metrics based on provided logits and labels.
+
+    Args:
+        metrics (list of str): List of metric names to compute.
+        logits (torch.Tensor): Predicted logits from the model.
+        labels (torch.Tensor): Ground truth labels.
+        suffix (str): Suffix to append to the metric names in the result dictionary.
+
+    Raises:
+        ValueError: If AUC is requested for multi-class classification.
+
+    Returns:
+        dict: Dictionary containing the computed metrics.
+    """
     result = {}
     
     if logits.dtype == torch.long: # clustering labels

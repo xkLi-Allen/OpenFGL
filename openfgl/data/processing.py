@@ -12,6 +12,21 @@ from torch_geometric.utils import add_random_edge
 
 
 def processing(args: argparse.ArgumentParser, splitted_data, processed_dir, client_id):
+    """Process the given splitted data based on the specified processing type in args.
+
+    This function applies various data processing techniques such as feature sparsity,
+    feature noise, topology sparsity, topology noise, label sparsity, and label noise
+    to the given dataset based on the `args.processing` parameter.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The splitted data (created by specific task) to be processed.
+        processed_dir (str): Directory where processed data should be stored.
+        client_id (int or None): Identifier for the client or None for global processing.
+
+    Returns:
+        dict: The processed splitted data based on the specified processing type.
+    """
     if args.processing == "raw" or client_id is None: # no processing or global data
         processed_data = splitted_data
     elif args.processing == "random_feature_sparsity":
@@ -40,6 +55,21 @@ def processing(args: argparse.ArgumentParser, splitted_data, processed_dir, clie
             
 
 def random_feature_sparsity(args: argparse.ArgumentParser, splitted_data: dict, processed_dir: str, client_id: int, mask_prob: float=0.1):
+    """Apply random feature sparsity to the splitted data.
+
+    This function creates a mask to introduce sparsity in the features of the splitted data
+    by randomly setting a percentage of feature values to zero.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and masks should be stored.
+        client_id (int): Identifier for the client.
+        mask_prob (float, optional): Probability of masking each feature. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with features sparsified according to the mask.
+    """
     mask_filename = osp.join(processed_dir, "sparsity", f"random_feature_sparsity_{mask_prob:.2f}_client_{client_id}.pt")
     if osp.exists(mask_filename):
         mask = torch.load(mask_filename)
@@ -76,6 +106,21 @@ def random_feature_sparsity(args: argparse.ArgumentParser, splitted_data: dict, 
 
 
 def random_feature_noise(args: argparse.ArgumentParser, splitted_data: dict, processed_dir: str, client_id: int, noise_std: float=0.1):
+    """Apply random feature noise to the given data.
+
+    This function adds Gaussian noise to the features of the data to introduce variability
+    based on the specified standard deviation of the noise.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and noise masks should be stored.
+        client_id (int): Identifier for the client.
+        noise_std (float, optional): Standard deviation of the Gaussian noise. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with features noised according to the generated noise.
+    """
     noise_filename = osp.join(processed_dir, "noise", f"random_feature_noise_{noise_std:.2f}_client_{client_id}.pt")
     if os.path.exists(noise_filename):
         noise = torch.load(noise_filename)
@@ -104,6 +149,21 @@ def random_feature_noise(args: argparse.ArgumentParser, splitted_data: dict, pro
 
 
 def random_label_sparsity(args: argparse.ArgumentParser, splitted_data: dict, processed_dir: str, client_id: int, mask_prob=0.1):
+    """Apply random label sparsity to the given data.
+
+    This function masks a percentage of training labels to introduce sparsity in the labels
+    based on the specified mask probability.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and masks should be stored.
+        client_id (int): Identifier for the client.
+        mask_prob (float, optional): Probability of masking each label. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with labels sparsified according to the mask.
+    """
     mask_filename = osp.join(processed_dir, "sparsity", f"random_label_sparsity_{mask_prob:.2f}_client_{client_id}.pt")
     if osp.exists(mask_filename):
         masked_train_mask = torch.load(mask_filename)
@@ -133,6 +193,21 @@ def random_label_sparsity(args: argparse.ArgumentParser, splitted_data: dict, pr
 
 
 def random_label_noise(args: argparse.ArgumentParser, splitted_data: dict, processed_dir: str, client_id: int, noise_prob: float=0.1):
+    """Apply random label noise to the given data.
+
+    This function changes a percentage of labels to random classes to introduce noise
+    based on the specified noise probability.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and noise masks should be stored.
+        client_id (int): Identifier for the client.
+        noise_prob (float, optional): Probability of changing each label. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with labels noised according to the generated noise.
+    """
     noise_filename = osp.join(processed_dir, "noise", f"random_label_noise_{noise_prob:.2f}_client_{client_id}.pt")
     if osp.exists(noise_filename):
         noised_label = torch.load(noise_filename)
@@ -169,6 +244,21 @@ def random_label_noise(args: argparse.ArgumentParser, splitted_data: dict, proce
 
 
 def random_topology_sparsity(args: argparse.ArgumentParser, splitted_data: dict, processed_dir: str, client_id: int, mask_prob: float=0.1):
+    """Apply random topology sparsity to the given data.
+
+    This function removes a percentage of edges to introduce sparsity in the topology
+    of the data based on the specified mask probability.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and masks should be stored.
+        client_id (int): Identifier for the client.
+        mask_prob (float, optional): Probability of masking each edge. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with topology sparsified according to the mask.
+    """
     masked_edge_index_filename = osp.join(processed_dir, "sparsity", f"random_topology_sparsity_{mask_prob:.2f}_client_{client_id}.pt")
 
     
@@ -227,6 +317,21 @@ def random_topology_sparsity(args: argparse.ArgumentParser, splitted_data: dict,
 
     
 def random_topology_noise(args, splitted_data: dict, processed_dir: str, client_id: int, noise_prob: float=0.1):
+    """Apply random topology noise to the given data.
+
+    This function introduces noise in the topology of the data by adding and removing edges
+    based on the specified noise probability.
+
+    Args:
+        args (argparse.ArgumentParser): Command-line arguments.
+        splitted_data (dict): The input data dictionary to be processed.
+        processed_dir (str): Directory where processed data and noise masks should be stored.
+        client_id (int): Identifier for the client.
+        noise_prob (float, optional): Probability of modifying each edge. Defaults to 0.1.
+
+    Returns:
+        dict: The data dictionary with topology noised according to the generated noise.
+    """
     noised_edge_index_filename = osp.join(processed_dir, "noise", f"random_topology_noise_{noise_prob:.2f}_client_{client_id}.pt")
     
     if args.task == "node_cls":

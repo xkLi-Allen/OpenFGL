@@ -12,6 +12,16 @@ from tqdm import tqdm
 import torch_geometric
 
 def get_subgraph_pyg_data(global_dataset, node_list):
+    """
+    Extract a subgraph from the global dataset given a list of node indices.
+
+    Args:
+        global_dataset (Data): The global graph dataset.
+        node_list (list): List of node indices to include in the subgraph.
+
+    Returns:
+        Data: The subgraph containing the specified nodes and their edges.
+    """
     global_edge_index = global_dataset.edge_index
     node_id_set = set(node_list)
     global_id_to_local_id = {}
@@ -55,6 +65,16 @@ def graph_fl_cross_domain(args, global_dataset):
 
 
 def graph_fl_label_skew(args, global_dataset, shuffle=True):
+    """
+    Simulate cross-domain federated learning for graph data.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (list): List of global graph datasets for each client.
+
+    Returns:
+        list: List of local graph datasets for each client.
+    """
     print("Conducting graph-fl label skew simulation...")
     
     graph_labels = global_dataset.y.numpy()
@@ -110,6 +130,17 @@ def graph_fl_label_skew(args, global_dataset, shuffle=True):
     
     
 def graph_fl_topology_skew(args, global_dataset, shuffle=True):
+    """
+    Simulate topology skew in federated learning for graph data.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+        shuffle (bool, optional): If True, shuffle the dataset. Defaults to True.
+
+    Returns:
+        list: List of local graph datasets for each client with topology skew.
+    """
     print("Conducting graph-fl topology skew simulation...")
     
     graph_labels = global_dataset.y.numpy()
@@ -172,6 +203,17 @@ def graph_fl_topology_skew(args, global_dataset, shuffle=True):
     
   
 def graph_fl_feature_skew(args, global_dataset, shuffle=True):
+    """
+    Simulate feature skew in federated learning for graph data.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+        shuffle (bool, optional): If True, shuffle the dataset. Defaults to True.
+
+    Returns:
+        list: List of local graph datasets for each client with feature skew.
+    """
     print("Conducting graph-fl feature skew simulation...")
     
     graph_labels = global_dataset.y.numpy()
@@ -234,6 +276,17 @@ def graph_fl_feature_skew(args, global_dataset, shuffle=True):
     
     
 def subgraph_fl_label_skew(args, global_dataset, shuffle=True):
+    """
+    Simulate label skew in federated learning for subgraphs.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (list): List of global graph datasets.
+        shuffle (bool, optional): If True, shuffle the dataset. Defaults to True.
+
+    Returns:
+        list: List of local subgraph datasets for each client with label skew.
+    """
     print("Conducting subgraph-fl label skew simulation...")
     node_labels = global_dataset[0].y.numpy()
     num_clients = args.num_clients
@@ -280,6 +333,16 @@ def subgraph_fl_label_skew(args, global_dataset, shuffle=True):
 
 
 def subgraph_fl_louvain_plus(args, global_dataset):
+    """
+    Simulate subgraph federated learning using the Louvain+ method.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+
+    Returns:
+        list: List of local subgraph datasets for each client using Louvain+ method.
+    """
     print("Conducting subgraph-fl louvain+ simulation...")
     louvain = Louvain(modularity='newman', resolution=args.louvain_resolution, return_aggregate=True) # resolution 越大产生的社区越多, 社区粒度越小
     adj_csr = to_scipy_sparse_matrix(global_dataset[0].edge_index)
@@ -326,6 +389,16 @@ def subgraph_fl_louvain_plus(args, global_dataset):
 
 
 def subgraph_fl_metis_plus(args, global_dataset):
+    """
+    Simulate subgraph federated learning using the Metis+ method.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+
+    Returns:
+        list: List of local subgraph datasets for each client using Metis+ method.
+    """
     print("Conducting subgraph-fl metis+ simulation...")
     graph_nx = to_networkx(global_dataset[0], to_undirected=True)
     communities = {com_id: {"nodes":[], "num_nodes":0, "label_distribution":[0] * global_dataset.num_classes} 
@@ -375,6 +448,16 @@ def subgraph_fl_metis_plus(args, global_dataset):
     
 
 def subgraph_fl_metis(args, global_dataset):
+    """
+    Simulate subgraph federated learning using the Metis method.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+
+    Returns:
+        list: List of local subgraph datasets for each client using Metis method.
+    """
     print("Conducting subgraph-fl metis simulation...")
     graph_nx = to_networkx(global_dataset[0], to_undirected=True)
     n_cuts, membership = metis.part_graph(args.num_clients, graph_nx)
@@ -396,6 +479,16 @@ def subgraph_fl_metis(args, global_dataset):
     
 
 def subgraph_fl_louvain(args, global_dataset):
+    """
+    Simulate subgraph federated learning using the Louvain method.
+
+    Args:
+        args (Namespace): Arguments containing model and training configurations.
+        global_dataset (Data): The global graph dataset.
+
+    Returns:
+        list: List of local subgraph datasets for each client using Louvain method.
+    """
     print("Conducting subgraph-fl louvain simulation...")
     louvain = Louvain(modularity='newman', resolution=args.louvain_resolution, return_aggregate=True)
     num_nodes = global_dataset[0].x.shape[0]

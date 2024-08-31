@@ -13,6 +13,16 @@ from typing import Dict, List, Optional, Tuple
 
 
 def load_global_dataset(root, scenario, dataset):
+    """Load a global dataset based on the given scenario and dataset name.
+
+    Args:
+        root (str): The root directory where datasets are stored.
+        scenario (str): The scenario type, either "graph_fl" or "subgraph_fl".
+        dataset (str): The name of the dataset to load.
+
+    Returns:
+        Dataset: The loaded dataset object.
+    """
     if scenario == "graph_fl":
         if dataset in  ["AIDS",
                         "BZR",

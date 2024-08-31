@@ -15,12 +15,49 @@ from openfgl.data.processing import processing
 
 
 class GraphClsTask(BaseTask):
+    """
+    Task class for graph classification in a federated learning setup.
+
+    Attributes:
+        client_id (int): ID of the client.
+        data_dir (str): Directory containing the data.
+        args (Namespace): Arguments containing model and training configurations.
+        device (torch.device): Device to run the computations on.
+        data (object): Data specific to the task.
+        model (torch.nn.Module): Model to be trained.
+        optim (torch.optim.Optimizer): Optimizer for the model.
+        train_mask (torch.Tensor): Mask for the training set.
+        val_mask (torch.Tensor): Mask for the validation set.
+        test_mask (torch.Tensor): Mask for the test set.
+        train_dataloader (DataLoader): DataLoader for the training set.
+        val_dataloader (DataLoader): DataLoader for the validation set.
+        test_dataloader (DataLoader): DataLoader for the test set.
+        splitted_data (dict): Dictionary containing split data and DataLoaders.
+        processed_data (object): Processed data for training.
+    """
+    
     def __init__(self, args, client_id, data, data_dir, device):
+        """
+        Initialize the GraphClsTask with provided arguments, data, and device.
+
+        Args:
+            args (Namespace): Arguments containing model and training configurations.
+            client_id (int): ID of the client.
+            data (object): Data specific to the task.
+            data_dir (str): Directory containing the data.
+            device (torch.device): Device to run the computations on.
+        """
         super(GraphClsTask, self).__init__(args, client_id, data, data_dir, device)
         
         
         
     def train(self, splitted_data=None):
+        """
+        Train the model on the provided or processed data.
+
+        Args:
+            splitted_data (dict, optional): Dictionary containing split data and DataLoaders. Defaults to None.
+        """
         if splitted_data is None:
             splitted_data = self.processed_data # use processed_data to train
         else:
@@ -40,6 +77,16 @@ class GraphClsTask(BaseTask):
                 self.optim.step()
             
     def evaluate(self, splitted_data=None, mute=False):
+        """
+        Evaluate the model on the provided or processed data.
+
+        Args:
+            splitted_data (dict, optional): Dictionary containing split data and DataLoaders. Defaults to None.
+            mute (bool, optional): If True, suppress the print statements. Defaults to False.
+
+        Returns:
+            dict: Dictionary containing evaluation metrics and results.
+        """
         if splitted_data is None:
             splitted_data = self.splitted_data # use splitted_data to evaluate
         else:
@@ -122,45 +169,108 @@ class GraphClsTask(BaseTask):
     
 
     def loss_fn(self, embedding, logits, label, mask):
+        """
+        Calculate the loss for the model.
+
+        Args:
+            embedding (torch.Tensor): Embeddings from the model.
+            logits (torch.Tensor): Logits from the model.
+            label (torch.Tensor): Ground truth labels.
+            mask (torch.Tensor): Mask to filter the logits and labels.
+
+        Returns:
+            torch.Tensor: Calculated loss.
+        """
         return self.default_loss_fn(logits[mask], label[mask])
         
     @property
-    def default_model(self):            
+    def default_model(self):   
+        """
+        Get the default model for graph classification.
+
+        Returns:
+            torch.nn.Module: Default model.
+        """         
         return load_graph_cls_default_model(self.args, input_dim=self.num_feats, output_dim=self.num_global_classes, client_id=self.client_id)
     
     @property
     def default_optim(self):
+        """
+        Get the default optimizer for the task.
+
+        Returns:
+            torch.optim.Optimizer: Default optimizer.
+        """
         if self.args.optim == "adam":
             from torch.optim import Adam
             return Adam
     
     @property
     def num_samples(self):
+        """
+        Get the number of samples in the dataset.
+
+        Returns:
+            int: Number of samples.
+        """
         return len(self.data)
     
     @property
     def num_feats(self):
+        """
+        Get the number of features in the dataset.
+
+        Returns:
+            int: Number of features.
+        """
         return self.data[0].x.shape[1]
     
     @property
     def num_global_classes(self):
+        """
+        Get the number of global classes in the dataset.
+
+        Returns:
+            int: Number of global classes.
+        """
         return self.data.num_global_classes
         
     @property
     def default_loss_fn(self):
+        """
+        Get the default loss function for the task.
+
+        Returns:
+            function: Default loss function.
+        """
         return nn.CrossEntropyLoss()
     
     @property
     def default_train_val_test_split(self):
+        """
+        Get the default train/validation/test split.
+
+        Returns:
+            tuple: Default train/validation/test split ratios.
+        """
         return 0.8, 0.1, 0.1
         
   
     @property
     def train_val_test_path(self):
+        """
+        Get the path to the train/validation/test split file.
+
+        Returns:
+            str: Path to the split file.
+        """
         return osp.join(self.data_dir, "graph_cls")
     
 
     def load_train_val_test_split(self):
+        """
+        Load the train/validation/test split from a file.
+        """
         if self.client_id is None and len(self.args.dataset) == 1: # server
             glb_train = []
             glb_val = []
@@ -250,6 +360,17 @@ class GraphClsTask(BaseTask):
         
 
     def local_graph_train_val_test_split(self, local_graphs, split, shuffle=True):
+        """
+        Split the local graphs into train, validation, and test sets.
+
+        Args:
+            local_graphs (object): Local graphs to be split.
+            split (str or tuple): Split ratios or default split identifier.
+            shuffle (bool, optional): If True, shuffle the graphs before splitting. Defaults to True.
+
+        Returns:
+            tuple: Masks for the train, validation, and test sets.
+        """
         num_graphs = self.num_samples
         
         if split == "default_split":

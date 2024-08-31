@@ -9,6 +9,19 @@ import json
 
 class FGLDataset(Dataset):
     def __init__(self, args, transform=None, pre_transform=None, pre_filter=None):
+        """Federated Graph Learning Dataset class.
+        This class handles the creation and management of datasets for federated graph learning
+        scenarios.
+
+        Args:
+            args (Namespace): Arguments specifying the dataset and simulation parameters.
+            transform (Optional[Callable]): A function/transform that takes in a Data object
+                and returns a transformed version.
+            pre_transform (Optional[Callable]): A function/transform that takes in a Data object
+                and returns a transformed version before saving to disk.
+            pre_filter (Optional[Callable]): A function that takes in a Data object and returns
+                a boolean value, indicating whether the data object should be included in the final dataset.
+        """
         self.check_args(args)
         self.args = args
         super(FGLDataset, self).__init__(args.root, transform, pre_transform, pre_filter)
@@ -17,18 +30,25 @@ class FGLDataset(Dataset):
     
     @property
     def global_root(self) -> str:
+        """Get the global root directory for datasets."""
         return osp.join(self.root, "global")
     
     @property
     def distrib_root(self) -> str:
+        """Get the distributed root directory for datasets."""
         return osp.join(self.root, "distrib")
     
     
     @property
     def raw_dir(self) -> str:
+        """Get the raw directory for datasets."""
         return self.root
 
     def check_args(self, args):
+        """Check the validity of the provided arguments.
+        Args:
+            args (Namespace): Arguments specifying the dataset and simulation parameters.
+        """
         if args.scenario == "graph_fl":
             from openfgl.config import supported_graph_fl_datasets, supported_graph_fl_simulations, supported_graph_fl_task
             for dataset in args.dataset:
@@ -59,6 +79,7 @@ class FGLDataset(Dataset):
     
     @property
     def processed_dir(self) -> str:
+        """Get the processed directory for datasets."""
         if self.args.simulation_mode in ["subgraph_fl_label_skew", "graph_fl_label_skew"]:
             simulation_name = f"{self.args.simulation_mode}_{self.args.skew_alpha:.2f}"
         elif self.args.simulation_mode in ["subgraph_fl_louvain_plus", "subgraph_fl_louvain"]:
@@ -78,15 +99,25 @@ class FGLDataset(Dataset):
                             
     @property
     def raw_file_names(self):
+        """Get the raw file names for the dataset."""
         return []
 
     @property
     def processed_file_names(self) -> str:
+        """Get the processed file names for the dataset."""
         files_names = ["data_{}.pt".format(i) for i in range(self.args.num_clients)]
         return files_names
 
 
     def get_client_data(self, client_id):
+        """Get the data for a specific client.
+
+        Args:
+            client_id (int): The client ID.
+
+        Returns:
+            Data: The data object for the client.
+        """
         data = torch.load(osp.join(self.processed_dir, "data_{}.pt".format(client_id)))
         if hasattr(data, "x"):
             data.x = data.x.to(torch.float32)
@@ -102,9 +133,16 @@ class FGLDataset(Dataset):
         return data
 
     def save_client_data(self, data, client_id):
+        """Save the data for a specific client.
+
+        Args:
+            data (Data): The data object to be saved.
+            client_id (int): The client ID.
+        """
         torch.save(data, osp.join(self.processed_dir, "data_{}.pt".format(client_id)))
 
     def process(self):
+        """Process the dataset according to the specified simulation mode."""
         if len(self.args.dataset) == 1:
             global_dataset = load_global_dataset(self.global_root, scenario=self.args.scenario, dataset=self.args.dataset[0])
         else:
@@ -149,6 +187,7 @@ class FGLDataset(Dataset):
         self.save_dataset_description()
         
     def save_dataset_description(self):
+        """Save the description of the dataset to a file."""
         file_path = os.path.join(self.processed_dir, "description.txt")
         args_str = json.dumps(vars(self.args), indent=4)
         with open(file_path, 'w') as file:
@@ -157,6 +196,7 @@ class FGLDataset(Dataset):
 
 
     def load_data(self):
+        """Load the data for all clients."""
         self.local_data = [self.get_client_data(client_id) for client_id in range(self.args.num_clients)]
         
         
