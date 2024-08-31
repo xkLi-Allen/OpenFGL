@@ -32,17 +32,17 @@ def accuracy(pred,true):
 
 class FedSagePlusClient(BaseClient):
     """
-    FedSagePlusClient is a client implementation for the Federated Learning algorithm 
-    with Subgraph Federated Learning and Missing Neighbor Generation (FedSagePlus).
-    It extends the BaseClient class and handles local training, neighbor generation, 
-    and data communication in a federated setting.
+    FedSagePlusClient is the client-side implementation for the Federated Learning algorithm 
+    described in the paper 'Subgraph Federated Learning with Missing Neighbor Generation'.
+    This class handles local training, missing neighbor generation, and subgraph reconstruction 
+    within a federated learning framework.
 
     Attributes:
-        splitted_impaired_data (dict): Contains the impaired subgraph data and masks for training, validation, and testing.
-        num_missing (torch.Tensor): Tensor indicating the number of missing neighbors for each node.
-        missing_feat (torch.Tensor): Tensor containing the features of missing neighbors.
-        original_neighbors (dict): Dictionary storing original neighbors for each node.
-        impaired_neighbors (dict): Dictionary storing neighbors in the impaired subgraph.
+        splitted_impaired_data (dict): The subgraph data with impaired/missing neighbors.
+        num_missing (torch.Tensor): Tensor representing the number of missing neighbors for each node.
+        missing_feat (torch.Tensor): Tensor containing the missing features of the graph.
+        original_neighbors (dict): A dictionary mapping node indices to their original neighbors.
+        impaired_neighbors (dict): A dictionary mapping node indices to their neighbors in the impaired subgraph.
     """
     
     
