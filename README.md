@@ -8,7 +8,7 @@ OpenFGL is a comprehensive, user-friendly algorithm library, complemented by an 
 <p align="center">
   <a href="https://arxiv.org/abs/2408.16288">Paper</a> •
   <a href="#Library Highlights">Highlights</a> •
-  <a href="https://pypi.org/project/openfgl-lib/1.0.2/">Installation</a> •
+  <a href="https://pypi.org/project/openfgl-lib/1.0.3/">Installation</a> •
   <a href="https://openfgl.readthedocs.io/en/latest/">Docs</a> •
   <a href="#Citation">Citation</a> 
 </p>
