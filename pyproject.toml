@@ -20,10 +20,17 @@ authors = [
 description = "Algorithm library for federated graph learning."
 license = {file = "LICENSE"}
 requires-python = ">=3.6"
+
+
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "requests>=2.13.0,<3.0.0"
 ]
 
 [project.urls]
@@ -36,7 +43,3 @@ include = ["openfgl*"]
 [tool.hatch.build.targets.wheel]
 packages = ["openfgl"]
 
-[project]
-dependencies = [
-    "requests>=2.13.0,<3.0.0"
-]
