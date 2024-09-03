@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "openfgl-lib"
-version = "1.0.2"
+version = "1.0.3"
 readme = "README.md" 
 authors = [
     { name = "Xunkai Li", email = "cs.xunkai.li@gmail.com" },
@@ -35,3 +35,8 @@ include = ["openfgl*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["openfgl"]
+
+[project]
+dependencies = [
+    "requests>=2.13.0,<3.0.0"
+]
