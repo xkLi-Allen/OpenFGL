@@ -45,13 +45,13 @@ def compute_supervised_metrics(metrics, logits, labels, suffix):
         result[f"accuracy_{suffix}"] = accuracy_score(np_labels, preds)
     
     if "precision" in metrics:
-        result[f"precision_{suffix}"] = precision_score(np_labels, preds, average='macro')
+        result[f"precision_{suffix}"] = precision_score(np_labels, preds, average='weighted')
 
     if "recall" in metrics:
-        result[f"recall_{suffix}"] = recall_score(np_labels, preds, average='macro')
+        result[f"recall_{suffix}"] = recall_score(np_labels, preds, average='weighted')
         
     if "f1" in metrics:
-        result[f"f1_{suffix}"] = f1_score(np_labels, preds, average='macro')
+        result[f"f1_{suffix}"] = f1_score(np_labels, preds, average='weighted')
         
     if "auc" in metrics:
         if np_labels.max() > 1:
