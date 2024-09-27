@@ -112,4 +112,4 @@ parser.add_argument("--model_param", type=bool, default=False)
 
 
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
