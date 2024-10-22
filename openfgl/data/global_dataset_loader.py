@@ -53,6 +53,9 @@ def load_global_dataset(root, scenario, dataset):
         if dataset in ["Cora", "CiteSeer", "PubMed"]:
             from torch_geometric.datasets import Planetoid
             return Planetoid(root=osp.join(root, "subgraph_fl"), name=dataset)
+        elif dataset in ["Reddit"]:
+            from torch_geometric.datasets import Reddit
+            return Reddit(root=osp.join(root, "subgraph_fl"))
         elif dataset in ["Photo", "Computers"]:
             from torch_geometric.datasets import Amazon
             return Amazon(root=osp.join(root, "subgraph_fl"), name=dataset)

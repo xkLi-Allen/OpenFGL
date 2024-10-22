@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 [project]
 name = "openfgl-lib"
-version = "1.0.5"
+version = "1.0.6"
 readme = "README.md" 
 authors = [
     { name = "Xunkai Li", email = "cs.xunkai.li@gmail.com" },

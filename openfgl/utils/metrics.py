@@ -59,7 +59,7 @@ def compute_supervised_metrics(metrics, logits, labels, suffix):
         result[f"auc_{suffix}"] = roc_auc_score(np_labels, probs)
 
     if "ap" in metrics:
-        result[f"ap_{suffix}"] = average_precision_score(np_labels, probs[:, 1] if probs.ndim > 1 else probs)
+        result[f"ap_{suffix}"] = average_precision_score(np_labels, probs[:, 1].reshape(-1,1) if probs.ndim > 1 else probs)
         
     # Clustering specific metrics
     if "clustering_accuracy" in metrics:
