@@ -8,7 +8,7 @@ supported_graph_fl_datasets = [
 ]
 supported_subgraph_fl_datasets = [
 "Cora", "CiteSeer", "PubMed", "CS", "Physics", "Computers", "Photo", "Chameleon", "Squirrel", "ogbn-arxiv", "ogbn-products", "Tolokers", "Actor", \
-"Amazon-ratings", "Roman-empire", "Questions", "Minesweeper", "Reddit"]
+"Amazon-ratings", "Roman-empire", "Questions", "Minesweeper", "Reddit", "Flickr"]
 
 
 supported_graph_fl_simulations = ["graph_fl_cross_domain", "graph_fl_label_skew", "graph_fl_topology_skew", "graph_fl_feature_skew"]

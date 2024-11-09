@@ -45,7 +45,9 @@ def load_global_dataset(root, scenario, dataset):
             return tudataset
         elif dataset in ["hERG"]:
             return hERGDataset(root=osp.join(root, "graph_fl"), use_node_attr=True, use_edge_attr=True)
-            
+        elif dataset in ["ogbg-molhiv", "ogbg-molpca", "ogbg-ppa", "ogbg-code2"]:
+            from ogb.graphproppred import PygGraphPropPredDataset
+            return PygGraphPropPredDataset(root=osp.join(root, "subgraph_fl"), name=dataset)
         
         
                 
@@ -84,7 +86,9 @@ def load_global_dataset(root, scenario, dataset):
         elif dataset in ["OGB-MAG"]:
             from torch_geometric.datasets import OGB_MAG
             return OGB_MAG(root=osp.join(root, "subgraph_fl", "OGB_MAG"), preprocess="metapath2vec")
-        
+        elif dataset in ["Flickr"]:
+            from torch_geometric.datasets import Flickr
+            return Flickr(root=osp.join(root, "subgraph_fl", "Flickr"))
 
 def cat(seq: List[Optional[torch.Tensor]]) -> Optional[torch.Tensor]:
     values = [v for v in seq if v is not None]
