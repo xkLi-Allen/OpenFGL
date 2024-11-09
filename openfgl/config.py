@@ -4,8 +4,7 @@ import argparse
 supported_scenario = ["graph_fl", "subgraph_fl"]
 
 supported_graph_fl_datasets = [
-"AIDS", "BZR", "COLLAB", "COX2", "DD", "DHFR", "ENZYMES", "IMDB-BINARY", "IMDB-MULTI", "MUTAG", "NCI1", "PROTEINS", "PTC_MR", "hERG"
-]
+"AIDS", "BZR", "COLLAB", "COX2", "DD", "DHFR", "ENZYMES", "IMDB-BINARY", "IMDB-MULTI", "MUTAG", "NCI1", "PROTEINS", "PTC_MR", "hERG", "ogbg-molhiv", "ogbg-molpca", "ogbg-ppa", "ogbg-code2"]
 supported_subgraph_fl_datasets = [
 "Cora", "CiteSeer", "PubMed", "CS", "Physics", "Computers", "Photo", "Chameleon", "Squirrel", "ogbn-arxiv", "ogbn-products", "Tolokers", "Actor", \
 "Amazon-ratings", "Roman-empire", "Questions", "Minesweeper", "Reddit", "Flickr"]
