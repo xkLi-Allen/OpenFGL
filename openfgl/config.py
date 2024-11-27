@@ -75,7 +75,7 @@ parser.add_argument("--metis_num_coms", type=int, default=100)
 parser.add_argument("--task", type=str, default="node_cls", choices=supported_graph_fl_task + supported_subgraph_fl_task)
 parser.add_argument("--num_clusters", type=int, default=7)
 # training settings
-parser.add_argument("--train_val_test", type=str, default="default_split")
+parser.add_argument("--train_val_test", type=str, default="default_split") # e.g., 0.2-0.4-0.4
 parser.add_argument("--num_epochs", type=int, default=3)
 parser.add_argument("--dropout", type=float, default=0.5)
 parser.add_argument("--lr", type=float, default=1e-2)

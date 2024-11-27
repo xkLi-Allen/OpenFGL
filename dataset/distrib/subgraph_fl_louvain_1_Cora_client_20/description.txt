@@ -34,7 +34,7 @@
     "weight_decay": 0.0005,
     "batch_size": 128,
     "model": [
-        "gcn"
+        "mlp"
     ],
     "num_layers": 2,
     "hid_dim": 64,

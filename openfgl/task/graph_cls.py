@@ -264,7 +264,11 @@ class GraphClsTask(BaseTask):
         Returns:
             str: Path to the split file.
         """
-        return osp.join(self.data_dir, "graph_cls")
+        if self.args.train_val_test == "default_split":
+            return osp.join(self.data_dir, f"graph_cls", "default_split")
+        else:
+            split_dir = f"split_{self.args.train_val_test}" 
+            return osp.join(self.data_dir, f"graph_cls", split_dir)
     
 
     def load_train_val_test_split(self):
